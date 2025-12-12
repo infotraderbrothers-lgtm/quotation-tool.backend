@@ -1,5 +1,6 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteerCore = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const cors = require('cors');
 
 const app = express();
@@ -37,24 +38,14 @@ app.post('/api/generate-pdf', async (req, res) => {
       });
     }
 
-    console.log('Launching browser...');
+    console.log('Launching browser with sparticuz chromium...');
     
-    // Launch Puppeteer with Railway-compatible settings
-    browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: '/usr/bin/chromium',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-extensions'
-      ],
-      ignoreDefaultArgs: ['--disable-extensions']
+    // Launch Puppeteer with sparticuz chromium
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless
     });
 
     console.log('Browser launched successfully');
