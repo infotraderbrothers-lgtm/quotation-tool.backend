@@ -1,20 +1,9 @@
 [phases.setup]
 nixPkgs = ['nodejs-18_x']
+aptPkgs = ['libnss3', 'libatk-bridge2.0-0', 'libx11-xcb1', 'libxcomposite1', 'libxdamage1', 'libxrandr2', 'libgbm1', 'libasound2', 'libpangocairo-1.0-0', 'libxshmfence1']
 
 [phases.install]
 cmds = ['npm install']
 
 [start]
 cmd = 'node server.js'
-```
-
-**What changed:**
-- Removed Chromium system packages (not needed anymore)
-- Much faster build time
-- The `@sparticuz/chromium` package handles everything
-
----
-
-## 📄 FILE 4: Procfile (Keep this if you have it)
-```
-web: node server.js
