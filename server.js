@@ -1,6 +1,5 @@
 const express = require('express');
-const puppeteerCore = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer');
 const cors = require('cors');
 
 const app = express();
@@ -38,29 +37,21 @@ app.post('/api/generate-pdf', async (req, res) => {
       });
     }
 
-    console.log('Getting Chromium executable path...');
+    console.log('Launching browser...');
     
-    // Get Chromium executable path
-    const executablePath = await chromium.executablePath();
-    console.log('Chromium path:', executablePath);
-    
-    console.log('Launching browser with chromium...');
-    
-    // Launch Puppeteer with optimized settings for Railway
-    browser = await puppeteerCore.launch({
+    // Launch Puppeteer
+    browser = await puppeteer.launch({
+      headless: 'new',
       args: [
-        ...chromium.args,
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-setuid-sandbox',
         '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-dev-tools',
         '--no-zygote',
         '--single-process'
-      ],
-      defaultViewport: chromium.defaultViewport,
-      executablePath: executablePath,
-      headless: chromium.headless || true,
-      ignoreHTTPSErrors: true
+      ]
     });
 
     console.log('Browser launched successfully');
@@ -86,7 +77,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       }
     });
 
-    console.log('PDF generated successfully, size:', pdfBuffer.length);
+    console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
 
     // Close browser
     await browser.close();
@@ -99,7 +90,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
     
-    console.log('PDF sent to client');
+    console.log('PDF sent to client successfully');
 
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -115,8 +106,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     
     res.status(500).json({ 
       error: 'Failed to generate PDF',
-      message: error.message,
-      details: error.stack
+      message: error.message
     });
   }
 });
@@ -124,5 +114,4 @@ app.post('/api/generate-pdf', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`PDF Generator API running on port ${PORT}`);
-  console.log('Environment:', process.env.NODE_ENV || 'development');
 });
