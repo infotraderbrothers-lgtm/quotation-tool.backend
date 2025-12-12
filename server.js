@@ -38,14 +38,29 @@ app.post('/api/generate-pdf', async (req, res) => {
       });
     }
 
-    console.log('Launching browser with sparticuz chromium...');
+    console.log('Getting Chromium executable path...');
     
-    // Launch Puppeteer with sparticuz chromium
+    // Get Chromium executable path
+    const executablePath = await chromium.executablePath();
+    console.log('Chromium path:', executablePath);
+    
+    console.log('Launching browser with chromium...');
+    
+    // Launch Puppeteer with optimized settings for Railway
     browser = await puppeteerCore.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-setuid-sandbox',
+        '--no-sandbox',
+        '--no-zygote',
+        '--single-process'
+      ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless
+      executablePath: executablePath,
+      headless: chromium.headless || true,
+      ignoreHTTPSErrors: true
     });
 
     console.log('Browser launched successfully');
@@ -71,7 +86,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       }
     });
 
-    console.log('PDF generated successfully');
+    console.log('PDF generated successfully, size:', pdfBuffer.length);
 
     // Close browser
     await browser.close();
@@ -88,6 +103,7 @@ app.post('/api/generate-pdf', async (req, res) => {
 
   } catch (error) {
     console.error('Error generating PDF:', error);
+    console.error('Error stack:', error.stack);
     
     if (browser) {
       try {
@@ -99,7 +115,8 @@ app.post('/api/generate-pdf', async (req, res) => {
     
     res.status(500).json({ 
       error: 'Failed to generate PDF',
-      message: error.message
+      message: error.message,
+      details: error.stack
     });
   }
 });
@@ -107,4 +124,5 @@ app.post('/api/generate-pdf', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`PDF Generator API running on port ${PORT}`);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
 });
