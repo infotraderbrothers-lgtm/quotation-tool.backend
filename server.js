@@ -8,8 +8,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// CORS - Allow all origins (as per your request)
 app.use(cors());
 
 // Health check endpoint
@@ -35,16 +33,16 @@ app.post('/api/generate-pdf', async (req, res) => {
     
     if (!html) {
       return res.status(400).json({ 
-        error: 'No HTML content provided',
-        message: 'Please send HTML content in the request body'
+        error: 'No HTML content provided'
       });
     }
 
     console.log('Launching browser...');
     
-    // Launch Puppeteer with Railway-optimized settings
+    // Launch Puppeteer with Railway-compatible settings
     browser = await puppeteer.launch({
       headless: 'new',
+      executablePath: '/usr/bin/chromium',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -52,14 +50,17 @@ app.post('/api/generate-pdf', async (req, res) => {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
-      ]
+        '--single-process',
+        '--disable-gpu',
+        '--disable-extensions'
+      ],
+      ignoreDefaultArgs: ['--disable-extensions']
     });
 
-    console.log('Browser launched, creating page...');
+    console.log('Browser launched successfully');
     const page = await browser.newPage();
     
-    // Set content with proper waiting
+    // Set content
     await page.setContent(html, {
       waitUntil: 'networkidle0',
       timeout: 30000
@@ -67,7 +68,7 @@ app.post('/api/generate-pdf', async (req, res) => {
 
     console.log('Generating PDF...');
     
-    // Generate PDF with A4 settings
+    // Generate PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -85,13 +86,11 @@ app.post('/api/generate-pdf', async (req, res) => {
     await browser.close();
     browser = null;
 
-    // Set proper headers for PDF download
+    // Send PDF
     const pdfFilename = filename || 'estimate.pdf';
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${pdfFilename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
-    
-    // Send the PDF
     res.send(pdfBuffer);
     
     console.log('PDF sent to client');
@@ -99,7 +98,6 @@ app.post('/api/generate-pdf', async (req, res) => {
   } catch (error) {
     console.error('Error generating PDF:', error);
     
-    // Clean up browser if it's still open
     if (browser) {
       try {
         await browser.close();
@@ -110,24 +108,12 @@ app.post('/api/generate-pdf', async (req, res) => {
     
     res.status(500).json({ 
       error: 'Failed to generate PDF',
-      message: error.message,
-      details: 'Please check that your HTML is valid and try again'
+      message: error.message
     });
   }
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: err.message 
-  });
 });
 
 // Start server
 app.listen(PORT, () => {
   console.log(`PDF Generator API running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/`);
-  console.log(`Generate PDF: POST http://localhost:${PORT}/api/generate-pdf`);
 });
