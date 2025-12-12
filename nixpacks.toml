@@ -1,9 +1,43 @@
 [phases.setup]
 nixPkgs = ['nodejs-18_x']
-aptPkgs = ['libnss3', 'libatk-bridge2.0-0', 'libx11-xcb1', 'libxcomposite1', 'libxdamage1', 'libxrandr2', 'libgbm1', 'libasound2', 'libpangocairo-1.0-0', 'libxshmfence1']
 
 [phases.install]
-cmds = ['npm install']
+cmds = ['npm ci --only=production']
 
 [start]
 cmd = 'node server.js'
+```
+
+**What changed:** Simpler configuration, lets Puppeteer handle Chromium installation automatically.
+
+---
+
+## 📄 FILE 4: Keep your Procfile as is
+```
+web: node server.js
+```
+
+---
+
+## 🔄 DEPLOYMENT STEPS
+
+1. Go to your **quotation-tool-backend** repository on GitHub
+2. **Update these 3 files:**
+   - Replace `package.json`
+   - Replace `server.js`
+   - Replace `nixpacks.toml`
+3. Railway will **auto-deploy**
+4. **Wait 5-7 minutes** (Puppeteer downloads Chromium during build)
+5. Watch the Railway logs
+
+---
+
+## 📊 WHAT TO LOOK FOR IN LOGS
+
+You should see:
+```
+✓ Installing dependencies
+✓ Downloading Chromium
+✓ Building
+✓ Starting
+PDF Generator API running on port 3000
