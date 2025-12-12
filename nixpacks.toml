@@ -1,0 +1,9 @@
+[phases.setup]
+nixPkgs = ['nodejs-18_x']
+aptPkgs = ['chromium', 'chromium-sandbox', 'ca-certificates', 'fonts-liberation', 'libnss3', 'libatk-bridge2.0-0', 'libdrm2', 'libxkbcommon0', 'libxcomposite1', 'libxdamage1', 'libxrandr2', 'libgbm1', 'libasound2']
+
+[phases.install]
+cmds = ['npm install']
+
+[start]
+cmd = 'node server.js'
